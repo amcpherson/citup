@@ -135,8 +135,8 @@ struct IloEnvSafe
 };
 
 double solve_tree_clone_freq(const vector<vector<int> >& gamma, const vector<vector<double> >& variant_freq,
-	const vector<int>& variant_assignment, vector<vector<double> >& node_freq,
-	vector<vector<double> >& clone_freq, bool verbose=false)
+	const vector<int>& variant_assignment, vector<vector<double> >& clone_freq,
+	vector<vector<double> >& clade_freq, bool verbose=false)
 {
 	try
 	{
@@ -150,49 +150,49 @@ double solve_tree_clone_freq(const vector<vector<int> >& gamma, const vector<vec
 		// Number of nodes from gamma matrix (one row/column per node)
 		int num_nodes = gamma.size();
 
-		// Node frequency vars, matrix of node by sample
-		IloNumVarArray node_freq_vars(env, num_nodes * num_samples, 0.0, 1.0);
-
-		// Node frequency vars, matrix of clone by sample
+		// Clone frequency vars, matrix of node by sample
 		IloNumVarArray clone_freq_vars(env, num_nodes * num_samples, 0.0, 1.0);
 
-		// Constraint for node frequencies summing to one for each sample
+		// Clade frequency vars, matrix of node by sample
+		IloNumVarArray clade_freq_vars(env, num_nodes * num_samples, 0.0, 1.0);
+
+		// Constraint for clone frequencies summing to one for each sample
 		IloConstraintArray node_constraints(env);
 		for (int sample = 0; sample < num_samples; sample++)
 		{
 			IloExpr node_expr(env);
-			for (int node = 0; node < num_nodes; node++)
+			for (int clone = 0; clone < num_nodes; clone++)
 			{
-				node_expr += node_freq_vars[node + sample * num_nodes];
+				node_expr += clone_freq_vars[clone + sample * num_nodes];
 			}
 
 			node_constraints.add(node_expr == 1.0);
 		}
 
-		// Constraint for relationship between node frequency and clone frequency
-		IloConstraintArray clone_constraints(env);
+		// Constraint for relationship between clone frequency and clade frequency
+		IloConstraintArray clade_constraints(env);
 		for (int sample = 0; sample < num_samples; sample++)
 		{
-			for (int clone = 0; clone < num_nodes; clone++)
+			for (int clade = 0; clade < num_nodes; clade++)
 			{
-				assert(clone < gamma.size());
+				assert(clade < gamma.size());
 
-				IloExpr clone_expr(env);
-				for (int node = 0; node < num_nodes; node++)
+				IloExpr clade_expr(env);
+				for (int clone = 0; clone < num_nodes; clone++)
 				{
-					assert(node < gamma[clone].size());
+					assert(clone < gamma[clade].size());
 
-					if (gamma[clone][node])
+					if (gamma[clade][clone])
 					{
-						clone_expr += node_freq_vars[node + sample * num_nodes];
+						clade_expr += clone_freq_vars[clone + sample * num_nodes];
 					}
 				}
 
-				clone_constraints.add(clone_freq_vars[clone + sample * num_nodes] == clone_expr);
+				clade_constraints.add(clade_freq_vars[clade + sample * num_nodes] == clade_expr);
 			}
 		}
 
-		// Squared error between clone and variant freq as objective
+		// Squared error between clade and variant freq as objective
 		IloExpr objective_expr(env);
 		for (int sample = 0; sample < num_samples; sample++)
 		{
@@ -200,15 +200,15 @@ double solve_tree_clone_freq(const vector<vector<int> >& gamma, const vector<vec
 			{
 				assert(variant < variant_assignment.size());
 
-				objective_expr += (clone_freq_vars[variant_assignment[variant] + sample * num_nodes] - variant_freq[variant][sample]) *
-				                  (clone_freq_vars[variant_assignment[variant] + sample * num_nodes] - variant_freq[variant][sample]);
+				objective_expr += (clade_freq_vars[variant_assignment[variant] + sample * num_nodes] - variant_freq[variant][sample]) *
+				                  (clade_freq_vars[variant_assignment[variant] + sample * num_nodes] - variant_freq[variant][sample]);
 			}
 		}
 
 		// Create model
 		IloModel model(env);
 		model.add(IloMinimize(env, objective_expr));
-		model.add(clone_constraints);
+		model.add(clade_constraints);
 		model.add(node_constraints);
 		
 		// Create optimizer
@@ -241,30 +241,30 @@ double solve_tree_clone_freq(const vector<vector<int> >& gamma, const vector<vec
 		double objective_value = cplex.getObjValue();
 		
 		// Solution values
-		node_freq.clear();
 		clone_freq.clear();
+		clade_freq.clear();
 		for (int sample = 0; sample < num_samples; sample++)
 		{
-			node_freq.push_back(vector<double>());
 			clone_freq.push_back(vector<double>());
-			for (int clone = 0; clone < num_nodes; clone++)
+			clade_freq.push_back(vector<double>());
+			for (int clade = 0; clade < num_nodes; clade++)
 			{
 				try
 				{
-					node_freq.back().push_back(cplex.getValue(node_freq_vars[clone + sample * num_nodes]));
+					clone_freq.back().push_back(cplex.getValue(clone_freq_vars[clade + sample * num_nodes]));
 				}
 				catch (IloException& e)
 				{
-					cout << "Warning: unable to extract node frequency " << clone << " " << sample << endl;
+					cout << "Warning: unable to extract clone frequency " << clade << " " << sample << endl;
 				}
 
 				try
 				{
-					clone_freq.back().push_back(cplex.getValue(clone_freq_vars[clone + sample * num_nodes]));
+					clade_freq.back().push_back(cplex.getValue(clade_freq_vars[clade + sample * num_nodes]));
 				}
 				catch (IloException& e)
 				{
-					cout << "Warning: unable to extract clone frequency " << clone << " " << sample << endl;
+					cout << "Warning: unable to extract clade frequency " << clade << " " << sample << endl;
 				}
 			}
 		}
@@ -373,9 +373,9 @@ void WriteSolution(ostream& file, const Node* tree, const Solution& solution)
 
 int main(int argc, char** argv)
 {
-	if (argc < 5)
+	if (argc < 4)
 	{
-		cerr << "Usage: tree_string variant_freq_filename variant_cluster_filename solution_filename" << endl;
+		cerr << "Usage: tree_string variant_freq_filename solution_filename" << endl;
 
 		return 1;
 	}
