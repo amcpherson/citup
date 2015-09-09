@@ -1,0 +1,5 @@
+*.pyc
+*.dSYM
+*.DS_Store
+src/citupiter
+src/citupqip
