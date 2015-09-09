@@ -3,11 +3,6 @@
 #  makefile for CITUP
 #------------------------------------------------
 
-# change the following two lines according to your system
-BOOST_DIRECTORY=/Users/amcphers/Build/boost_1_51_0
-CPLEX_DIRECTORY=/Users/amcphers/Applications/IBM/ILOG/CPLEX_Studio125
-CPLEX_BUILD=x86-64_darwin
-
 CC=g++-mp-4.8
 
 citupqip: citupqip.cpp
