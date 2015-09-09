@@ -92,7 +92,10 @@ else:
             self.tree = tree
         @property
         def unlabeled_tree_string(self):
-            return self.tree.create_unlabled_tree_string()
+            return self.tree.create_unlabeled_tree_string()
+        @property
+        def labeled_tree_string(self):
+            return self.tree.create_labeled_tree_string()
         def __eq__(self, other):
             return self.num_nodes == other.num_nodes and self.tree_index == other.tree_index
 
@@ -100,7 +103,6 @@ else:
         for num_nodes in xrange(min_nodes, max_nodes + 1):
             for tree_index, parent_array in enumerate(BeyerHedetmieni.getParentArrays(num_nodes, max_children_per_node)):
                 yield TreeInfo(num_nodes, tree_index, treenode.create_from_parent_array(parent_array))
-                tree_string = treenode.create_from_parent_array(parent_array).create_unlabled_tree_string()
 
     def create_trees(min_nodes, max_nodes, max_children_per_node):
         return dict(enumerate(generate_trees(min_nodes, max_nodes, max_children_per_node)))
@@ -125,7 +127,7 @@ else:
             results_info = dict()
             results_info['num_nodes'] = tree.num_nodes
             results_info['tree_index'] = tree.tree_index
-            results_info['tree_string'] = tree.unlabeled_tree_string
+            results_info['tree_string'] = tree.labeled_tree_string
             results_info['num_mutations'] = freq.shape[0]
             results_info['num_samples'] = freq.shape[1]
             results_info['objective_value'] = results_data['objective_value']

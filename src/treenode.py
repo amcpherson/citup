@@ -11,10 +11,10 @@ class Node(object):
             tree_string += child.create_labeled_tree_string()
         tree_string += ']'
         return tree_string
-    def create_unlabled_tree_string(self):
+    def create_unlabeled_tree_string(self):
         tree_string = '['
         for child in self.children:
-            tree_string += child.create_unlabled_tree_string()
+            tree_string += child.create_unlabeled_tree_string()
         tree_string += ']'
         return tree_string
     def get_tree_node_ids(self):
