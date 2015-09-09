@@ -135,9 +135,9 @@ struct IloEnvSafe
 };
 
 double solve_tree(const vector<vector<int> >& gamma, const vector<vector<double> >& variant_freq,
-                  const vector<int>& variant_cluster, vector<vector<double> >& clone_freq,
-                  vector<vector<double> >& clade_freq, vector<int>& cluster_assignment,
-                  bool verbose=false)
+	const vector<int>& variant_cluster, vector<vector<double> >& clone_freq,
+	vector<vector<double> >& clade_freq, vector<int>& cluster_assignment,
+	bool verbose=false)
 {
 	try
 	{
@@ -444,12 +444,12 @@ void WriteSolution(ostream& file, const Node* tree, const Solution& solution)
 
 int main(int argc, char** argv)
 {
-    if (argc < 5)
-    {
-        cerr << "Usage: tree_string variant_freq_filename variant_cluster_filename solution_filename" << endl;
+	if (argc < 5)
+	{
+		cerr << "Usage: tree_string variant_freq_filename variant_cluster_filename solution_filename" << endl;
 
-        return 1;
-    }
+		return 1;
+	}
 
 	string tree_string = argv[1];
 	string variant_freq_filename = argv[2];
