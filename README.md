@@ -9,6 +9,10 @@ evolutionary tree, and an assignment of mutations to nodes in the tree.
 
 ## Prerequisites
 
+## Pypeliner
+
+Pypeliner can be found at https://bitbucket.org/dranew/pypeliner.
+
 ### CPLEX
 
 CPLEX is required to run citup.  A license is required and is free for academic use.  Install CPLEX and set the `CPLEX_DIRECTORY`
