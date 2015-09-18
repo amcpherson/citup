@@ -21,7 +21,7 @@ CPLEX_DIRECTORY=/Applications/IBM/ILOG/CPLEX_Studio125
 CPLEX_BUILD=x86-64_darwin
 ```
 
-Specifies that you have installed to `/Applications/IBM/ILOG/` and are using the 64 bit mac binaries.  The available builds will
+Specifies that you have installed to `/Applications/IBM/ILOG/CPLEX_Studio125` and are using the 64 bit mac binaries.  The available builds will
 be in subdirectories of `/Users/amcphers/Applications/IBM/ILOG/CPLEX_Studio125/cplex/lib/`
 
 ### Boost C++
