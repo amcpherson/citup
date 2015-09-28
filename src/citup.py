@@ -33,11 +33,8 @@ if __name__ == '__main__':
     argparser.add_argument('input_clusters',
                            help='Input Mutation Clusters')
 
-    argparser.add_argument('output_solution',
-                           help='Output Solution Tree')
-
-    argparser.add_argument('output_all_trees',
-                           help='Output For All Trees')
+    argparser.add_argument('output_results',
+                           help='Output Results HDF5 Store')
 
     argparser.add_argument('--min_nodes', type=int, default=1,
                            help='Output For All Trees')
@@ -78,8 +75,7 @@ if __name__ == '__main__':
         mgd.InputFile(args['input_freqs']),
         mgd.TempInputObj('trees', 'tree'),
         mgd.TempInputFile('results', 'tree'),
-        mgd.OutputFile(args['output_solution']), 
-        mgd.OutputFile(args['output_all_trees']))
+        mgd.OutputFile(args['output_results']))
 
     pyp.run()
 
@@ -121,22 +117,21 @@ else:
                 dataset[name] = np.array(data.split(), dtype=dtype).reshape(shape)
         return dataset
 
-    def read_results(tree, freq, results_filename):
-        results_data = read_dataset(results_filename)
-        with open(results_filename, 'r') as f:
-            results_info = dict()
-            results_info['num_nodes'] = tree.num_nodes
-            results_info['tree_index'] = tree.tree_index
-            results_info['tree_string'] = tree.labeled_tree_string
-            results_info['num_mutations'] = freq.shape[0]
-            results_info['num_samples'] = freq.shape[1]
-            results_info['objective_value'] = results_data['objective_value']
-            try:
-                results_info['cplex_status'] = results_data['cplex_status']
-                results_info['cplex_time'] = results_data['cplex_hours']
-            except KeyError:
-                pass
-            return results_info
+    def create_results_entry(tree_id, tree, freq, results_data):
+        results_info = dict()
+        results_info['tree_id'] = tree_id
+        results_info['num_nodes'] = tree.num_nodes
+        results_info['tree_index'] = tree.tree_index
+        results_info['tree_string'] = tree.labeled_tree_string
+        results_info['num_mutations'] = freq.shape[0]
+        results_info['num_samples'] = freq.shape[1]
+        results_info['objective_value'] = results_data['objective_value']
+        try:
+            results_info['cplex_status'] = results_data['cplex_status']
+            results_info['cplex_time'] = results_data['cplex_hours']
+        except KeyError:
+            pass
+        return results_info
     
     def estimate_error_rate(freq):
         gmm_bics = list()
@@ -149,20 +144,28 @@ else:
         gmm.fit(freq)
         return np.sqrt(np.mean(gmm.covars_))
     
-    def select_optimal_tree(freq_filename, trees, results_filenames, optimal_filename, all_trees_filename):
-        freq = np.loadtxt(freq_filename)
-        error_rate = estimate_error_rate(freq)
-        results_table = list()
-        for tree_id in trees.keys():
-            results_table.append(pd.DataFrame(read_results(trees[tree_id], freq, results_filenames[tree_id]), index=[tree_id]))
-        results_table = pd.concat(results_table)
-        results_table['error_rate'] = error_rate
-        results_table['likelihood'] = results_table['objective_value'] / (2.0 * error_rate * error_rate)
-        results_table['bic'] = 2.0 * results_table['likelihood'] + results_table['num_samples'] * (results_table['num_nodes'] - 1.0) * np.log(results_table['num_mutations'])
-        results_table.sort('bic', inplace=True)
-        results_table['optimal'] = False
-        results_table['optimal'].iloc[0] = True
-        results_table.to_csv(all_trees_filename, sep='\t', index=False)
-        optimal_index = results_table.index[0]
-        shutil.copyfile(results_filenames[optimal_index], optimal_filename)
-    
+    def select_optimal_tree(freq_filename, trees, results_filenames, output_filename):
+        with pd.HDFStore(output_filename, 'w') as store:
+            freq = np.loadtxt(freq_filename)
+            error_rate = estimate_error_rate(freq)
+            results_table = list()
+            for tree_id in trees.keys():
+                results_data = read_dataset(results_filenames[tree_id])
+                for key, value in results_data.iteritems():
+                    table_key = 'trees/{0}/{1}'.format(tree_id, key)
+                    if len(value.shape) == 2:
+                        store[table_key] = pd.DataFrame(value)
+                    elif len(value.shape) == 1:
+                        store[table_key] = pd.Series(value)
+                    elif len(value.shape) == 0:
+                        store[table_key] = pd.Series([value])
+                results_table.append(pd.DataFrame(create_results_entry(tree_id, trees[tree_id], freq, results_data), index=[0]))
+            results_table = pd.concat(results_table, ignore_index=True)
+            results_table['error_rate'] = error_rate
+            results_table['likelihood'] = results_table['objective_value'] / (2.0 * error_rate * error_rate)
+            results_table['bic'] = 2.0 * results_table['likelihood'] + results_table['num_samples'] * (results_table['num_nodes'] - 1.0) * np.log(results_table['num_mutations'])
+            results_table.sort('bic', inplace=True)
+            results_table['optimal'] = False
+            results_table['optimal'].iloc[0] = True
+            store['results'] = results_table
+

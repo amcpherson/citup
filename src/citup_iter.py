@@ -27,11 +27,8 @@ if __name__ == '__main__':
     argparser.add_argument('input_freqs',
                            help='Input Mutation Frequencies')
 
-    argparser.add_argument('output_solution',
-                           help='Output Solution Tree')
-
-    argparser.add_argument('output_all_trees',
-                           help='Output For All Trees')
+    argparser.add_argument('output_results',
+                           help='Output Results HDF5 Store')
 
     argparser.add_argument('--min_nodes', type=int, default=1,
                            help='Output For All Trees')
@@ -70,8 +67,7 @@ if __name__ == '__main__':
         mgd.InputFile(args['input_freqs']),
         mgd.TempInputObj('trees', 'tree'),
         mgd.TempInputFile('results', 'tree'),
-        mgd.OutputFile(args['output_solution']), 
-        mgd.OutputFile(args['output_all_trees']))
+        mgd.OutputFile(args['output_results']))
 
     pyp.run()
 
