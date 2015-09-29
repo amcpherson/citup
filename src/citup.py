@@ -167,5 +167,6 @@ else:
             results_table.sort('bic', inplace=True)
             results_table['optimal'] = False
             results_table['optimal'].iloc[0] = True
-            store['results'] = results_table
+            for name, column in results_table.iteritems():
+                store['results/{0}'.format(name)] = column
 
