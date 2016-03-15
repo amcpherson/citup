@@ -41,33 +41,50 @@ if __name__ == '__main__':
 
     args = vars(argparser.parse_args())
 
-    pyp = pypeliner.app.Pypeline([citup], args)
+    pyp = pypeliner.app.Pypeline(modules=[citup], config=args)
 
     citup_bin_directory = os.path.join(os.path.dirname(citup.__file__))
     citup_iter_tool = os.path.join(citup_bin_directory, 'citupiter')
 
-    lowmem = {'mem':1,'ncpu':1}
+    lowmem = {'mem': 1, 'ncpu': 1}
 
-    pyp.sch.transform('create_trees', (), lowmem,
-        citup.create_trees,
-        mgd.TempOutputObj('trees', 'tree'),
-        int(args['min_nodes']),
-        int(args['max_nodes']),
-        int(args['max_children_per_node']))
+    workflow = pypeliner.workflow.Workflow()
+
+    workflow.transform(
+        name='create_trees',
+        ctx=lowmem,
+        func=citup.create_trees,
+        ret=mgd.TempOutputObj('trees', 'tree'),
+        args=(
+            int(args['min_nodes']),
+            int(args['max_nodes']),
+            int(args['max_children_per_node']),
+        ),
+    )
     
-    pyp.sch.commandline('run_citup', ('tree',), lowmem, 
-        citup_iter_tool,
-        mgd.TempInputObj('trees', 'tree').prop('unlabeled_tree_string'),
-        mgd.InputFile(args['input_freqs']),
-        mgd.TempOutputFile('results', 'tree'))
+    workflow.commandline(
+        name='run_citup',
+        axes=('tree',),
+        ctx=lowmem,
+        args=(
+            citup_iter_tool,
+            mgd.TempInputObj('trees', 'tree').prop('unlabeled_tree_string'),
+            mgd.InputFile(args['input_freqs']),
+            mgd.TempOutputFile('results', 'tree'),
+        ),
+    )
 
-    pyp.sch.transform('select_optimal_tree', (), lowmem,
-        citup.select_optimal_tree,
-        None,
-        mgd.InputFile(args['input_freqs']),
-        mgd.TempInputObj('trees', 'tree'),
-        mgd.TempInputFile('results', 'tree'),
-        mgd.OutputFile(args['output_results']))
+    workflow.transform(
+        name='select_optimal_tree',
+        ctx=lowmem,
+        func=citup.select_optimal_tree,
+        args=(
+            mgd.InputFile(args['input_freqs']),
+            mgd.TempInputObj('trees', 'tree'),
+            mgd.TempInputFile('results', 'tree'),
+            mgd.OutputFile(args['output_results']),
+        ),
+    )
 
-    pyp.run()
+    pyp.run(workflow)
 
