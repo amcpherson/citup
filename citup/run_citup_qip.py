@@ -1,4 +1,3 @@
-import os
 import argparse
 
 import pypeliner
@@ -34,10 +33,19 @@ if __name__ == '__main__':
 
     args = vars(argparser.parse_args())
 
-    pyp = pypeliner.app.Pypeline(modules=[citup], config=args)
+    min_nodes = args['min_nodes']
+    max_nodes = args['max_nodes']
+    max_children_per_node = args['max_children_per_node']
 
-    citup_bin_directory = os.path.abspath(os.path.dirname(citup.__file__))
-    citupqip_tool = os.path.join(citup_bin_directory, 'citupqip')
+    with open(args['input_clusters'], 'r') as f:
+        num_clusters = len(set([a.rstrip() for a in f]))
+
+    min_nodes = min(min_nodes, num_clusters + 1)
+    max_nodes = min(max_nodes, num_clusters + 1)
+
+    print 'min_nodes: {}, max_nodes: {}'.format(min_nodes, max_nodes)
+
+    pyp = pypeliner.app.Pypeline(modules=[citup], config=args)
 
     workflow = pypeliner.workflow.Workflow(default_ctx={'mem': 4})
 
@@ -46,9 +54,9 @@ if __name__ == '__main__':
         func=citup.trees.create_trees,
         ret=mgd.TempOutputObj('trees', 'tree'),
         args=(
-            int(args['min_nodes']),
-            int(args['max_nodes']),
-            int(args['max_children_per_node']),
+            min_nodes,
+            max_nodes,
+            max_children_per_node,
         ),
     )
     
@@ -57,7 +65,7 @@ if __name__ == '__main__':
         axes=('tree',),
         ctx={'mem': 16},
         args=(
-            citupqip_tool,
+            'citupqip',
             mgd.TempInputObj('trees', 'tree').prop('unlabeled_tree_string'),
             mgd.InputFile(args['input_freqs']),
             mgd.InputFile(args['input_clusters']),
