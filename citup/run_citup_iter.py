@@ -1,22 +1,12 @@
-import csv
-import sys
-import logging
 import os
-import ConfigParser
-import itertools
 import argparse
-import string
-import gzip
-import ConfigParser
-import shutil
-from collections import *
-import numpy as np
-import pandas as pd
 
 import pypeliner
 import pypeliner.managed as mgd
 
-import citup
+import citup.trees
+import citup.tasks
+
 
 if __name__ == '__main__':
 
@@ -50,7 +40,7 @@ if __name__ == '__main__':
 
     workflow.transform(
         name='create_trees',
-        func=citup.create_trees,
+        func=citup.trees.create_trees,
         ret=mgd.TempOutputObj('trees', 'tree'),
         args=(
             int(args['min_nodes']),
@@ -72,7 +62,7 @@ if __name__ == '__main__':
 
     workflow.transform(
         name='select_optimal_tree',
-        func=citup.select_optimal_tree,
+        func=citup.tasks.select_optimal_tree,
         args=(
             mgd.InputFile(args['input_freqs']),
             mgd.TempInputObj('trees', 'tree'),
