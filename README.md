@@ -7,43 +7,27 @@ Citup estimates the clone phylogeny and clonal genotypes for deep sequencing of 
 The input are cellular frequencies of mutations as estimated from the deep sequencing data.  The method infers an
 evolutionary tree, and an assignment of mutations to nodes in the tree.
 
-## Prerequisites
+## Installation
 
-## Pypeliner
+The supported installation method for citup is using [conda](http://conda.pydata.org/docs/).  If you do not already
+use conda, we recommend installing [anaconda](https://www.continuum.io/downloads) or
+[miniconda](http://conda.pydata.org/miniconda.html).
 
-Pypeliner can be found at https://bitbucket.org/dranew/pypeliner.
-
-### CPLEX
-
-CPLEX is required to run citup.  A license is required and is free for academic use.  Install CPLEX and set the `CPLEX_DIRECTORY`
-and `CPLEX_BUILD` environment variables.
-
-For example:
+You will need to add my conda channel using:
 
 ```
-CPLEX_DIRECTORY=/Applications/IBM/ILOG/CPLEX_Studio125
-CPLEX_BUILD=x86-64_darwin
+conda config --add channels http://conda.anaconda.org/dranew
 ```
 
-Specifies that you have installed to `/Applications/IBM/ILOG/CPLEX_Studio125` and are using the 64 bit mac binaries.  The available builds will
-be in subdirectories of `/Users/amcphers/Applications/IBM/ILOG/CPLEX_Studio125/cplex/lib/`
+Cplex is required to run citup.  For licensing reasons this could not be included in my public conda repo.
+A license is required and is free for academic use.  The recommended installation procedure involves building
+and installing cplex using conda.  A [conda build recipe for cplex](https://bitbucket.org/dranew/conda_recipes/src)
+is provided.
 
-### Boost C++
-
-A boost c++ header only installation is required.  If boost is not installed on your system, [download](http://www.boost.org/users/download/)
-and unpack, and set the following environment variable to the resulting directory.
-
-```
-BOOST_DIRECTORY=
-```
-
-## Build
-
-Run the following commands to build citup.
+With cplex installed you should be able to type:
 
 ```
-cd src
-make citupiter citupqip
+conda install citup
 ```
 
 ## Usage
@@ -64,11 +48,10 @@ For example, the following would be input for 3 mutations in 2 samples.
 Given mutation frequences `freq.txt`, run citup iter using the following command.
 
 ```
-python citup_iter.py freq.txt output_solution.txt output_alltrees.tsv
+python run_citup_iter.py freq.txt results.h5
 ```
 
-The above command will run citup iter and produce a solution file in `output_solution.txt` and a table
-of results for all trees in `output_alltrees.tsv` in tab separated format.
+The above command will run citup iter and produce results in pandas hdf5 format in `results.h5`.
 
 For additional options run `python citup_iter.py -h`.
 
@@ -88,14 +71,40 @@ first two in the same cluster the last in a different cluster.
 Given mutation frequences `freq.txt` and mutation clusters `clusters.txt` run citup QIP using the following command.
 
 ```
-python citup.py freq.txt clusters.txt output_solution.txt output_alltrees.tsv
+python run_citup_qip.py freq.txt clusters.txt results.h5
 ```
 
-The above command will run citup iter and produce a solution file in `output_solution.txt` and a table
-of results for all trees in `output_alltrees.tsv` in tab separated format.
+The above command will run citup iter and produce results in pandas hdf5 format in `results.h5`.
 
 For additional options run `python citup.py -h`.
 
+## Output Format
 
+The output of citup is [pandas hdf5](http://pandas.pydata.org/pandas-docs/version/0.18.0/generated/pandas.read_hdf.html) format.
 
+The results store contains the following pandas series, with an entry per tree solution:
+
+ - `/results/bic`
+ - `/results/error_rate`
+ - `/results/likelihood`
+ - `/results/num_mutations`
+ - `/results/num_nodes`
+ - `/results/num_samples`
+ - `/results/objective_value`
+ - `/results/optimal`
+ - `/results/tree_id`
+ - `/results/tree_index`
+ - `/results/tree_string`
+
+The store also contains the following pandas series, with one series per tree solution:
+
+ - `/trees/{tree_solution}/cluster_assignment`
+ - `/trees/{tree_solution}/objective_value`
+
+Finally, the store contains the following pandas dataframes, with one frame per tree solution:
+
+ - `/trees/{tree_solution}/adjacency_list`
+ - `/trees/{tree_solution}/clade_freq`
+ - `/trees/{tree_solution}/clone_freq`
+ - `/trees/{tree_solution}/gamma_matrix`
 
