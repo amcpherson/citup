@@ -30,4 +30,4 @@ all : citupqip citupiter
 
 .PHONY : install
 install: all
-    cp citupqip citupiter $(INSTALL_DIRECTORY)
+	cp citupqip citupiter $(INSTALL_DIRECTORY)
