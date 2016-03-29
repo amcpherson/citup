@@ -1,0 +1,25 @@
+package:
+  name: citup
+  version: '0.1.0'
+
+source:
+  git_url: https://dranew@bitbucket.org/dranew/destruct.git
+  git_rev: v0.1.0
+
+build:
+  number: 0
+
+requirements:
+  build:
+    - 'python'
+    - 'cplex'
+    - 'boost_source'
+  run:
+    - 'python'
+    - 'cplex'
+    - 'boost_source'
+    - 'pypeliner'
+
+about:
+  home: https://bitbucket.org/dranew/citup
+  summary: Clonality inference in multiple tumor samples using phylogeny
