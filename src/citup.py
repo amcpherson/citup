@@ -47,37 +47,49 @@ if __name__ == '__main__':
 
     args = vars(argparser.parse_args())
 
-    pyp = pypeliner.app.Pypeline([citup], args)
+    pyp = pypeliner.app.Pypeline(modules=[citup], config=args)
 
     citup_bin_directory = os.path.abspath(os.path.dirname(citup.__file__))
     citupqip_tool = os.path.join(citup_bin_directory, 'citupqip')
 
-    lowmem = {'mem':1}
-    himem = {'mem':8}
+    workflow = pypeliner.workflow.Workflow(default_ctx={'mem': 4})
 
-    pyp.sch.transform('create_trees', (), lowmem,
-        citup.create_trees,
-        mgd.TempOutputObj('trees', 'tree'),
-        int(args['min_nodes']),
-        int(args['max_nodes']),
-        int(args['max_children_per_node']))
+    workflow.transform(
+        name='create_trees',
+        func=citup.create_trees,
+        ret=mgd.TempOutputObj('trees', 'tree'),
+        args=(
+            int(args['min_nodes']),
+            int(args['max_nodes']),
+            int(args['max_children_per_node']),
+        ),
+    )
     
-    pyp.sch.commandline('run_citup', ('tree',), himem,
-        citupqip_tool,
-        mgd.TempInputObj('trees', 'tree').prop('unlabeled_tree_string'),
-        mgd.InputFile(args['input_freqs']),
-        mgd.InputFile(args['input_clusters']),
-        mgd.TempOutputFile('results', 'tree'))
+    workflow.commandline(
+        name='run_citup',
+        axes=('tree',),
+        ctx={'mem': 16},
+        args=(
+            citupqip_tool,
+            mgd.TempInputObj('trees', 'tree').prop('unlabeled_tree_string'),
+            mgd.InputFile(args['input_freqs']),
+            mgd.InputFile(args['input_clusters']),
+            mgd.TempOutputFile('results', 'tree'),
+        ),
+    )
 
-    pyp.sch.transform('select_optimal_tree', (), lowmem, 
-        citup.select_optimal_tree,
-        None,
-        mgd.InputFile(args['input_freqs']),
-        mgd.TempInputObj('trees', 'tree'),
-        mgd.TempInputFile('results', 'tree'),
-        mgd.OutputFile(args['output_results']))
+    workflow.transform(
+        name='select_optimal_tree',
+        func=citup.select_optimal_tree,
+        args=(
+            mgd.InputFile(args['input_freqs']),
+            mgd.TempInputObj('trees', 'tree'),
+            mgd.TempInputFile('results', 'tree'),
+            mgd.OutputFile(args['output_results']),
+        ),
+    )
 
-    pyp.run()
+    pyp.run(workflow)
 
 else:
 

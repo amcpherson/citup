@@ -46,13 +46,10 @@ if __name__ == '__main__':
     citup_bin_directory = os.path.join(os.path.dirname(citup.__file__))
     citup_iter_tool = os.path.join(citup_bin_directory, 'citupiter')
 
-    lowmem = {'mem': 1, 'ncpu': 1}
-
-    workflow = pypeliner.workflow.Workflow()
+    workflow = pypeliner.workflow.Workflow(default_ctx={'mem': 4})
 
     workflow.transform(
         name='create_trees',
-        ctx=lowmem,
         func=citup.create_trees,
         ret=mgd.TempOutputObj('trees', 'tree'),
         args=(
@@ -65,7 +62,6 @@ if __name__ == '__main__':
     workflow.commandline(
         name='run_citup',
         axes=('tree',),
-        ctx=lowmem,
         args=(
             citup_iter_tool,
             mgd.TempInputObj('trees', 'tree').prop('unlabeled_tree_string'),
@@ -76,7 +72,6 @@ if __name__ == '__main__':
 
     workflow.transform(
         name='select_optimal_tree',
-        ctx=lowmem,
         func=citup.select_optimal_tree,
         args=(
             mgd.InputFile(args['input_freqs']),
