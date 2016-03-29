@@ -48,12 +48,12 @@ For example, the following would be input for 3 mutations in 2 samples.
 Given mutation frequences `freq.txt`, run citup iter using the following command.
 
 ```
-python run_citup_iter.py freq.txt results.h5
+run_citup_iter.py freq.txt results.h5
 ```
 
 The above command will run citup iter and produce results in pandas hdf5 format in `results.h5`.
 
-For additional options run `python citup_iter.py -h`.
+For additional options run `run_citup_iter.py -h`.
 
 ### Citup QIP
 
@@ -71,12 +71,12 @@ first two in the same cluster the last in a different cluster.
 Given mutation frequences `freq.txt` and mutation clusters `clusters.txt` run citup QIP using the following command.
 
 ```
-python run_citup_qip.py freq.txt clusters.txt results.h5
+run_citup_qip.py freq.txt clusters.txt results.h5
 ```
 
 The above command will run citup iter and produce results in pandas hdf5 format in `results.h5`.
 
-For additional options run `python citup.py -h`.
+For additional options run `run_citup_qip.py -h`.
 
 ## Output Format
 
